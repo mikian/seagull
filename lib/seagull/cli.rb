@@ -1,31 +1,30 @@
 require 'thor'
-require 'hashie/mash'
-require 'yaml'
+# require 'seagull/config'
 
 module Seagull
   class CLI < Thor
-    attr_reader :configuration
-    
     def initialize(*args)
       super
       
-      @config_file   = '.seagull'
-      @configuration = Hashie::Mash.new
-      if File.exists?(@config_file)
-        @configuration.deep_merge!(YAML.load_file('.seagull'))
-      end
+      # @config = Seagull::Config.instance      
     end
     
     desc "debug", "Opens debug console"
     def debug
       require 'pry'
-      require 'seagull/versionomy/format_definitions/apple'
-      
-      version = Versionomy.parse('1A1a', :apple)
+
       binding.pry
     end
   end
 end
 
+# 
 require 'seagull/tasks/config'
 require 'seagull/tasks/version'
+
+module Seagull
+  class CLI
+    register(Seagull::Tasks::Config,  'config',  'config <command>',  'Manage and display configuration settings')
+    register(Seagull::Tasks::Version, 'version', 'version <command>', 'Version release tasks')
+  end
+end

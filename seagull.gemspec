@@ -1,11 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'seagull/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "seagull"
-  spec.version       = Seagull::VERSION
+  spec.version       = "0.0.1"
   spec.authors       = ["Mikko Kokkonen"]
   spec.email         = ["mikko@owlforestry.com"]
   spec.description   = %q{Seagull makes managing XCode projects easy as flying is for seagulls}
