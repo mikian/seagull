@@ -47,6 +47,12 @@ module Seagull
         say_status "FAILED", e.message, :red
       end
       
+      desc "name [VERSION_NAME]", "Name current major release (#{VERSION.major})"
+      def name(ver_name)
+        CONFIG.versions![VERSION.major] = ver_name; CONFIG.save
+        say_status "version", "Version #{VERSION.major} named as #{ver_name}"
+      end
+      
       desc "patch", "Release new patch version (#{VERSION.peek(:patch)})"
       def patch
         VERSION.patch

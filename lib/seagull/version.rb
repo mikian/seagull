@@ -38,7 +38,11 @@ module Seagull
     def marketing
       case @config.version.format
       when :apple
-        major, minor = @config.versions[@version.major].split('.')
+        major, minor = if @config.versions![@version.major]
+          @config.versions[@version.major].split('.')
+        else
+          [@version.major, @version.minor]
+        end
         tiny         = @version.convert(:standard).tiny
         
         Versionomy.create(major: major, minor: minor, tiny: tiny).unparse(:required_fields => :tiny)
@@ -54,6 +58,15 @@ module Seagull
       else
         @version.convert(:standard).tiny2
       end
+    end
+    
+    def bundle_numeric
+      case @config.version.format
+      when :apple
+        @version.build
+      else
+        @version.convert(:standard).tiny2
+      end      
     end
     
     def save
