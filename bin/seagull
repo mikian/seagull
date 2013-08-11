@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+$:.unshift File.join(File.dirname(__FILE__), *%w[.. lib])
+
+# Do we have seagull inside bundler?
+if File.exists?("Gemfile") and File.read("Gemfile") =~ /#{File.basename($0)}/
+  # Restart tool from bundle if facing load error
+  require 'bundler'
+  begin
+    Bundler.require(:default)
+  rescue LoadError
+    exec "bundle", "exec", File.basename($0), *ARGV
+  end
+end
+
+require 'seagull/cli'
+Seagull::CLI.start
