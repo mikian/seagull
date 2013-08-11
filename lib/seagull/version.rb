@@ -30,6 +30,28 @@ module Seagull
       peek.unparse
     end
     
+    # Output marketing version
+    def marketing
+      case @config.version.format
+      when :apple
+        major, minor = @config.versions[@version.major].split('.')
+        tiny         = @version.convert(:standard).tiny
+        
+        Versionomy.create(major: major, minor: minor, tiny: tiny).unparse(:required_fields => :tiny)
+      else
+        @version.convert(:standard).unparse(:required_fields => [:major, :minor, :tiny])
+      end
+    end
+    
+    def bundle
+      case @config.version.format
+      when :apple
+        @version.unparse
+      else
+        @version.convert(:standard).tiny2
+      end
+    end
+    
     def save
       if File.extname(@config.version.file) == '.yml'
         yaml = if File.exists?(@config.version.file)
