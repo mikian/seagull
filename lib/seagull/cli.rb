@@ -9,8 +9,9 @@ module Seagull
     def initialize(*args)
       super
       
+      @config_file   = '.seagull'
       @configuration = Hashie::Mash.new
-      if File.exists?('.seagull')
+      if File.exists?(@config_file)
         @configuration.deep_merge!(YAML.load_file('.seagull'))
       end
     end
