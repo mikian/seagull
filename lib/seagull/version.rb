@@ -20,9 +20,13 @@ module Seagull
     def peek(what)
       peek = case what
       when :release
-        @version.bump(:major)
+        bump(:major)
+      when :patch
+        bump(:minor)
+      when :update
+        bump(:update)
       when :build
-        @version.bump(:build)
+        bump(:build)
       else
         @version
       end
@@ -73,6 +77,14 @@ module Seagull
       bump!(:build); self
     end
     
+    def update
+      bump!(:update); self
+    end
+    
+    def patch
+      bump!(:minor); self
+    end
+    
     def release(major = nil, version = nil)
       old_major   = @version.major
       old_version = @config.versions![old_major.to_s]
@@ -90,8 +102,25 @@ module Seagull
       self
     end
     
+    def bump(field)
+      _tr = {
+        :apple => {},
+        :standard => {
+          :update => :tiny, :build => :tiny2
+        }
+      }
+      
+      _field = _tr[@config.version.format][field] || field
+      
+      if @config.version.format == :apple and field == :update and @version.update.empty?
+        @version.change(update: 'a')
+      else
+        @version.bump(field)
+      end
+    end
+    
     def bump!(field)
-      @version = @version.bump(field); save; self
+      @version = bump(field); save; self
     end
     
     def to_s(format = @config.version.format)

@@ -52,7 +52,6 @@ module Versionomy
       def self.create_standard_to_apple
         Conversion::Parsing.new do
           to_modify_original_value do |original_, convert_params_|
-            binding.pry
             apple_version = {
               major: original_.major,
               minor: ('A'..'Z').to_a[original_.minor],

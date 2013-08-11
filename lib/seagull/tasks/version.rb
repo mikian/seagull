@@ -8,7 +8,7 @@ module Seagull
       
       desc "print", "Prints current version (#{VERSION.to_s})"
       def print
-        say_status "version", "Current version #{VERSION.to_s}"
+        say_status "current", "Version %s (%s)" % [VERSION.marketing, VERSION.bundle], :blue
       end
       
       desc "list", "List all versions and majors"
@@ -29,6 +29,15 @@ module Seagull
         print_table table
       end
       
+      desc "bumplist", "List all possible bump versions"
+      def bumplist
+        peeks    = [:release, :patch, :update, :build]
+        versions = [['Type', 'Version']]
+        versions += peeks.collect{|t| [t.to_s, VERSION.peek(t)]}
+        
+        print_table versions
+      end
+      
       desc "release [MAJOR] [VERSION]", "Releases new version (#{VERSION.peek(:release)})"
       def release(major = nil, version = nil)
         VERSION.release(major, version)
@@ -36,6 +45,18 @@ module Seagull
         say_status "RELEASE", "Version #{VERSION.to_s} has been released", :green
       rescue => e
         say_status "FAILED", e.message, :red
+      end
+      
+      desc "patch", "Release new patch version (#{VERSION.peek(:patch)})"
+      def patch
+        VERSION.patch
+        say_status "PATCH", "Version increased #{VERSION.to_s}"
+      end
+      
+      desc "update", "Release new update (#{VERSION.peek(:update)})"
+      def update
+        VERSION.update
+        say_status "update", "Version update to #{VERSION.to_s}"
       end
       
       desc "build [BUILDNUMBER]", "Increases build number (#{VERSION.peek(:build)}), optionally set to given number"
