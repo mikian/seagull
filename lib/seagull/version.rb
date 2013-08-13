@@ -79,10 +79,23 @@ module Seagull
       
         yaml.merge!(@version.values_hash)
         
+        # Some shortcuts
+        yaml.merge!({
+          marketing: self.marketing,
+          bundle: self.bundle,
+          bundle_numeric: self.bundle_numeric,
+          short: self.marketing,
+          string: self.marketing,
+        })
+        
         File.open(@config.version.file, 'w') {|io| io.puts yaml.to_yaml }
+        
       else
         File.open(@config.version.file, 'w') {|io| io.puts @version.unparse }
       end
+
+      # Commit
+      system "git commit #{@config.version.file} -m 'Bumped version to #{self.bundle}'"
     end
     
     # Accessors
@@ -112,6 +125,10 @@ module Seagull
       end
       
       @config.versions![major] = version; @config.save
+      
+      # Commit
+      system "git tag 'v#{self.marketing}' -m 'Released version #{self.marketing}'"
+      
       self
     end
     
