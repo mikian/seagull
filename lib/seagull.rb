@@ -1,4 +1,1 @@
-require "seagull/version"
-
-module Seagull
-end
+require 'seagull/tasks'
