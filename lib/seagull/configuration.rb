@@ -60,7 +60,7 @@ module Seagull
     end
     
     def archive_file_name(override = {})
-      "#{archive_name}-#{marketing_version}-#{version}_#{configuration.send(override.fetch(:release_type, release_type))}.xcarchive"
+      "#{archive_name}-#{full_version}_#{configuration.send(override.fetch(:release_type, release_type))}.xcarchive"
     end
     
     def archive_full_path(type)
@@ -96,7 +96,7 @@ module Seagull
     end
     
     def reload_version!
-      @version = nil; version_data
+      @version_data = nil; version_data
     end
     
     def marketing_version
