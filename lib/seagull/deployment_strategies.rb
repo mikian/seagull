@@ -1,3 +1,5 @@
+require 'vandamme'
+
 module Seagull
   module DeploymentStrategies
     def self.valid_strategy?(strategy_name)
@@ -18,11 +20,30 @@ module Seagull
       end
 
       def configure(&block)
+        @configuration.deploy.from_hash(defaults)
+        
         yield @configuration.deploy
       end
-
+      
+      def defaults
+        {}
+      end
+      
       def prepare
         puts "Nothing to prepare!"
+      end
+      
+      def deploy
+        raise "NOT IMPLEMENTED"
+      end
+      
+      def release_notes
+        changelog = ::File.exists?(@configuration.changelog_file) ? ::File.read(@configuration.changelog_file) : ""
+
+        parser = Vandamme::Parser.new(changelog: changelog, version_header_exp: '^\*\*?([\w\d\.-]+\.[\w\d\.-]+[a-zA-Z0-9])( \/ (\d{4}-\d{2}-\d{2}|\w+))?\*\*\n?[=-]*', format: 'markdown')
+        changes = parser.parse
+        
+        changes.first(@configuration.deploy.release_notes_items).collect{|v, c| "**#{v}**\n\n#{c}" }.join("\n\n")
       end
     end
 

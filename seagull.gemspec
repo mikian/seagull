@@ -17,13 +17,16 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "rake",     "~> 10.1"
-  spec.add_dependency "xcpretty", "~> 0.1.3"
-  spec.add_dependency "app_conf", "~> 0.4.2"
-  spec.add_dependency "unicode",  "~> 0.4.4"
-  spec.add_dependency "nokogiri", "~> 1.6.1"
-  spec.add_dependency "vandamme", "~> 0.0.7"
-  spec.add_dependency "json",     "~> 1.8.1"
+  spec.add_dependency "rake",           "~> 10.1"
+  spec.add_dependency "xcpretty",       "~> 0.1.3"
+  spec.add_dependency "app_conf",       "~> 0.4.2"
+  spec.add_dependency "unicode",        "~> 0.4.4"
+  spec.add_dependency "nokogiri",       "~> 1.6.1"
+  spec.add_dependency "vandamme",       "~> 0.0.7"
+  spec.add_dependency "json",           "~> 1.8.1"
+  spec.add_dependency "term-ansicolor", "~> 1.3.0"
+  spec.add_dependency "launchy",        "~> 2.4.2"
+  
 
   spec.add_development_dependency "bundler", "~> 1.3"
 end

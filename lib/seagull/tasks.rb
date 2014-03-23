@@ -2,32 +2,14 @@ require 'rake'
 require 'rake/tasklib'
 require 'vandamme'
 require 'date'
+require 'term/ansicolor'
 require 'seagull/configuration'
 
 module Seagull
   class Tasks < ::Rake::TaskLib
     def initialize(namespace = :seagull, &block)
-      @configuration = Configuration.new(
-        :configuration   => {:debug => 'Debug', :beta => 'AdHoc', :release => 'Release'},
-        :build_dir       => 'build',
-        :auto_archive    => true,
-        :changelog_file  => File.expand_path('CHANGELOG.md'),
-        :archive_path    => File.expand_path("~/Library/Developer/Xcode/Archives"),
-        :ipa_path        => File.expand_path("~/Library/Developer/Xcode/Archives"),
-        :xctool_path     => "xctool",
-        :xcodebuild_path => "xcodebuild",
-        :workspace_path  => nil,
-        :scheme          => nil,
-        :app_name        => nil,
-        :arch            => nil,
-        :skip_clean      => false,
-        :verbose         => false,
-        :dry_run         => false,
-        :xcpretty        => true,
-        
-        :deploy          => {},
-      )
-      @namespace = namespace
+      @configuration = Configuration.new
+      @namespace     = namespace
       
       yield @configuration if block_given?
       
@@ -67,7 +49,13 @@ module Seagull
           file @configuration.ipa_full_path(type) => @configuration.archive_full_path(type) do
             xcodebuild "-exportArchive", "-exportFormat", "ipa", "-archivePath", Shellwords.escape(@configuration.archive_full_path(type)), "-exportPath", Shellwords.escape(@configuration.ipa_full_path(type))
           end
-
+          
+          file @configuration.dsym_full_path(type) => @configuration.archive_full_path(type) do
+            dsym_path = File.expand_path(Dir["#{@configuration.archive_full_path(type)}/dSYMS/*"].first)
+            Dir.chdir dsym_path do
+              sh("/usr/bin/zip --symlinks --verbose --recurse-paths '#{@configuration.dsym_full_path(type)}' .")
+            end
+          end
         end
         
         ['beta', 'release'].each do |type|
@@ -76,7 +64,23 @@ module Seagull
             task archive: [@configuration.archive_full_path(type)]
           
             desc "Package the #{type} version as an IPA file"
-            task package: [@configuration.ipa_full_path(type)]
+            task package: [@configuration.ipa_full_path(type), @configuration.dsym_full_path(type)]
+            
+            if @configuration.deployment_strategies
+              desc "Prepare your app for deployment"
+              task prepare: ['git:verify', :package] do
+                @configuration.deployment_strategy(type).prepare
+              end
+          
+              desc "Deploy the beta using your chosen deployment strategy"
+              task deploy: [:prepare] do
+                @configuration.deployment_strategy(type).deploy
+              end
+          
+              desc "Deploy the last build"
+              task redeploy: [:prepre, :deploy]
+            end
+            
           end
           
           desc "Build, package and deploy beta build"
@@ -87,13 +91,36 @@ module Seagull
         # Version control
         namespace(:version) do
           desc "Bumps build number"
-          task :bump do
+          task bump: ['git:verify:dirty'] do
             sh("agvtool bump -all")
             @configuration.reload_version!
+            
+            # Edit changelog
+            Rake::Task["#{@namespace}:changelog:edit"].invoke
+            Rake::Task["#{@namespace}:version:commit"].invoke
+            Rake::Task["#{@namespace}:version:tag"].invoke
           end
           
+          task :tag do
+            current_tag = %x{git describe --exact-match `git rev-parse HEAD` 2>/dev/null}.strip
+            unless current_tag == @configuration.version_tag
+              sh("git tag -m 'Released version #{@configuration.full_version}' -s '#{@configuration.version_tag}'")
+            end
+          end
+          
+          task :commit do
+            ver_files = %x{git status --porcelain}.split("\n").collect{|a| Shellwords.escape(a.gsub(/[ AM\?]+ (.*)/, '\1'))}
+            
+            Dir.chdir(git_directory) do
+              sh("git add #{ver_files.join(' ')}")
+              sh("git commit -m 'Bumped version to #{@configuration.full_version}' #{ver_files.join(' ')}")
+            end
+          end
+        end
+        
+        namespace(:changelog) do
           desc "Edit changelog for current version"
-          task :changelog do
+          task :edit do
             changelog = if File.exists?(@configuration.changelog_file)
               File.read(@configuration.changelog_file)
             else
@@ -124,29 +151,32 @@ module Seagull
         end
         
         namespace(:git) do
-          task :verify do
-            current_tag = %x{git describe --exact-match `git rev-parse HEAD` 2>/dev/null}.strip
-            unless current_tag == @configuration.version_tag
-              raise "Current commit is not properly tagged in GIT. Please tag and release version."
+          namespace(:verify) do
+            # Verify GIT tag
+            task :tag do
+              current_tag = %x{git describe --exact-match `git rev-parse HEAD` 2>/dev/null}.strip
+              unless current_tag == @configuration.version_tag
+                puts ""
+                puts Term::ANSIColor.red("!!! Current commit is not properly tagged in GIT. Please tag and release version.")
+                puts ""
+
+                fail unless ENV['IGNORE_GIT_TAG']
+              end
+            end
+            
+            # Verify dirty
+            task :dirty do
+              unless %x{git status -s --ignore-submodules=dirty 2> /dev/null}.empty?
+                puts ""
+                puts Term::ANSIColor.red("!!! Current GIT tree is dirty. Please commit changes before building release.")
+                puts ""
+                
+                fail unless ENV['IGNORE_GIT_DIRTY']
+              end
             end
           end
           
-          task :tag do
-            sh("git tag -m 'Released version #{@configuration.full_version}' -s '#{@configuration.version_tag}'")
-          end
-          
-          task "commit:version" do
-            ver_files = %W{
-              #{APPNAME}.xcodeproj/project.pbxproj
-              #{APPDIR}/#{APPNAME}-Info.plist
-              CHANGELOG.md
-            }.join(' ')
-          
-            system "git add #{ver_files}"
-            system "git commit -m 'Bumped version to #{version}' #{ver_files}"
-            system "git tag -m 'Released version #{version}' -s 'v#{version}'"
-            system "git push --tags"
-          end
+          task verify: ['verify:tag', 'verify:dirty']
         end
         
         def xctool(*args)
@@ -156,6 +186,21 @@ module Seagull
         def xcodebuild(*args)
           sh("#{@configuration.xcodebuild_path} #{args.join(" ")} | xcpretty -c; exit ${PIPESTATUS[0]}")
         end
+      end
+    end
+
+    def git_directory
+      original_cwd = Dir.pwd
+
+      loop do
+        if File.directory?('.git')
+          git_dir = Dir.pwd
+          Dir.chdir(original_cwd) and return git_dir
+        end
+
+        Dir.chdir(original_cwd) and return if Pathname.new(Dir.pwd).root?
+        
+        Dir.chdir('..')
       end
     end
   end
