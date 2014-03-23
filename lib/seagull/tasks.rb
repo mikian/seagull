@@ -84,7 +84,7 @@ module Seagull
           end
           
           desc "Build, package and deploy beta build"
-          task type => ["#{type}:archive"] do
+          task type => ["#{type}:deploy"] do
           end
         end
         
