@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["mikko@owlforestry.com"]
   spec.description   = %q{Seagull makes managing XCode projects easy as flying is for seagulls}
   spec.summary       = %q{Manage Xcode projects with total control}
-  spec.homepage      = ""
+  spec.homepage      = "http://mikian.github.io/seagull"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
