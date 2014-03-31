@@ -108,7 +108,7 @@ module Seagull
     end
     
     def full_version
-      "#{marketing_version}.#{version}"
+      "#{marketing_version}-#{version}"
     end
     
     def version_tag
