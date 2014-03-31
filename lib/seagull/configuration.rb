@@ -132,5 +132,15 @@ module Seagull
       
       args.collect{|k,v| "-#{k} #{Shellwords.escape(v)}"}
     end
+    
+    def environment_for(release_type)
+      env = []
+      if release_type == 'release'
+        env << 'CODE_SIGN_IDENTITY=""'
+        env << 'CODE_SIGNING_REQUIRED=NO'
+      end
+      
+      env
+    end
   end
 end
