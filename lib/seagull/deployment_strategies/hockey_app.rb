@@ -5,7 +5,7 @@ require 'launchy'
 module Seagull
   module DeploymentStrategies
     class HockeyApp < DeploymentStrategy
-      
+
       def defaults
         {
           :allow_download => true,
@@ -14,11 +14,11 @@ module Seagull
           :tags           => '',
         }
       end
-      
+
       # Nothing to prepare
       def prepare
       end
-      
+
       def deploy
         # Create response file
         response_file = Tempfile.new('seagull_deploy_hockey')
@@ -35,7 +35,7 @@ module Seagull
           repository_url: %x{git remote -v|grep fetch|awk '{print $2;}'}.strip,
         }
         opts = payload.collect{|k,v| "-F #{k}=#{Shellwords.escape(v)}"}.join(" ")
-        
+
         puts "Uploading to Hockeyapp... Please wait..."
         system("curl #{opts} -o #{response_file.path} -H 'X-HockeyAppToken: #{@configuration.deploy.token}' https://rink.hockeyapp.net/api/2/apps/#{@configuration.deploy.appid}/app_versions/upload")
 
@@ -54,7 +54,7 @@ module Seagull
       ensure
         response_file.unlink
       end
-      
+
     private
     end
   end

@@ -21,28 +21,28 @@ module Seagull
 
       def configure(&block)
         @configuration.deploy.from_hash(defaults)
-        
+
         yield @configuration.deploy
       end
-      
+
       def defaults
         {}
       end
-      
+
       def prepare
         puts "Nothing to prepare!"
       end
-      
+
       def deploy
         raise "NOT IMPLEMENTED"
       end
-      
+
       def release_notes
         changelog = ::File.exists?(@configuration.changelog_file) ? ::File.read(@configuration.changelog_file) : ""
 
         parser = Vandamme::Parser.new(changelog: changelog, version_header_exp: '^\*\*?([\w\d\.-]+\.[\w\d\.-]+[a-zA-Z0-9])( \/ (\d{4}-\d{2}-\d{2}|\w+))?\*\*\n?[=-]*', format: 'markdown')
         changes = parser.parse
-        
+
         changes.first(@configuration.deploy.release_notes_items).collect{|v, c| "**#{v}**\n\n#{c}" }.join("\n\n")
       end
     end
@@ -50,11 +50,11 @@ module Seagull
     private
 
     def self.strategies
-      {:file => File, :hockeyapp => HockeyApp}
+      {:file => File, :hockeyapp => HockeyApp, :crashlytics => Crashlytics}
     end
   end
 end
 
 require 'seagull/deployment_strategies/file'
 require 'seagull/deployment_strategies/hockey_app'
-
+require 'seagull/deployment_strategies/crashlytics'
