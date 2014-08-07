@@ -77,7 +77,11 @@ module Seagull
           if @configuration.deployment_strategies
             prepare_reqs = []
             prepare_reqs << (type == 'beta' ? 'git:verify:dirty' : 'git:verify')
-            prepare_reqs << :package unless @configuration.ipa_path.nil? and @configuration.dsym_path.nil?
+            if @configuration.ipa_path.nil? and @configuration.dsym_path.nil?
+              prepare_reqs << :archive
+            else
+              prepare_reqs << :package
+            end
 
             desc "Prepare your app for deployment"
             task prepare: prepare_reqs do
