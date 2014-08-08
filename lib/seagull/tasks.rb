@@ -103,7 +103,7 @@ module Seagull
 
         end
 
-        desc "Build, package and deploy beta build"
+        desc "Build, package and deploy #{type} build"
         task type do
           Rake::Task["version:bump"].invoke(type)
           Rake::Task["#{type}:deploy"].invoke
@@ -113,14 +113,18 @@ module Seagull
       # Version control
       namespace(:version) do
         desc "Bumps build number"
-        task :bump, [:type] => ['git:verify:dirty'] do |t, args|
-          sh("agvtool bump -all")
-          @configuration.reload_version!
+        task :bump, [:type] do |t, args|
+          Rake::Task["git:verify:dirty"].invoke
 
-          # Edit changelog
-          Rake::Task["changelog:edit"].invoke
-          Rake::Task["version:commit"].invoke
-          Rake::Task["version:tag"].invoke if args[:type] == 'release' or args[:type].nil?
+          unless ENV['SKIP_VERSION_BUMP']
+            sh("agvtool bump -all")
+            @configuration.reload_version!
+
+            # Edit changelog
+            Rake::Task["changelog:edit"].invoke
+            Rake::Task["version:commit"].invoke
+            Rake::Task["version:tag"].invoke if args[:type] == 'release' or args[:type].nil?
+          end
         end
 
         task :tag do

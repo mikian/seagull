@@ -23,7 +23,6 @@ module Seagull
         cmd << @configuration.deploy.build_secret
         cmd << "-ipaPath #{Shellwords.escape(@configuration.ipa_full_path(@configuration.active_release_type))}"
 
-        require 'pry';binding.pry
         system(cmd.join(' '))
       end
 
