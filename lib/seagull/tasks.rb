@@ -123,7 +123,9 @@ module Seagull
             # Edit changelog
             Rake::Task["changelog:edit"].invoke
             Rake::Task["version:commit"].invoke
-            Rake::Task["version:tag"].invoke if args[:type] == 'release' or args[:type].nil?
+            if args[:type] == 'release' or args[:type].nil?
+              Rake::Task["version:tag"].invoke
+            end
           end
         end
 
